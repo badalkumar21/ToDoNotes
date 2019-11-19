@@ -61,6 +61,11 @@ public class AddEditNoteActivity extends AppCompatActivity {
 
     TextView datePickerText;
     TextView timePickerText;
+    TextView textViewAddDesc;
+    TextView textViewHideDesc;
+    TextView textViewPrirityHigh;
+    TextView textViewPrirityMedium;
+    TextView textViewPrirityLow;
 
     final Calendar myCalendar = Calendar.getInstance();
     String myFormat = "dd MMM yyyy";
@@ -74,17 +79,43 @@ public class AddEditNoteActivity extends AppCompatActivity {
     int day;
     int month;
     int year;
-
+    int notePriority;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_note);
 
+        notePriority = 3;
         editTextTitle = findViewById(R.id.edit_text_title);
         editTextDesc = findViewById(R.id.edit_text_desc);
         numberPickerPriority = findViewById(R.id.number_picker_priority);
         imageButton = findViewById(R.id.button_add_note);
+        textViewAddDesc = findViewById(R.id.text_add_description);
+        textViewHideDesc = findViewById(R.id.text_hide_description);
+        textViewPrirityHigh = findViewById(R.id.priorityHigh);
+        textViewPrirityMedium = findViewById(R.id.priorityMedium);
+        textViewPrirityLow = findViewById(R.id.priorityLow);
+
+        setupPriorityClickListner();
+
+        textViewAddDesc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                editTextDesc.setVisibility(View.VISIBLE);
+                textViewHideDesc.setVisibility(View.VISIBLE);
+                textViewAddDesc.setVisibility(View.GONE);
+            }
+        });
+
+        textViewHideDesc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                editTextDesc.setVisibility(View.GONE);
+                textViewHideDesc.setVisibility(View.GONE);
+                textViewAddDesc.setVisibility(View.VISIBLE);
+            }
+        });
 
         recyclerView = findViewById(R.id.recycler_view_add);
         AddNoteAdapter adapter = new AddNoteAdapter(this);
@@ -96,8 +127,6 @@ public class AddEditNoteActivity extends AppCompatActivity {
 
         sdf = new SimpleDateFormat(myFormat, Locale.US);
 
-//        hr = myCalendar.get(Calendar.HOUR_OF_DAY);
-//        min = myCalendar.get(Calendar.MINUTE);
         hr = 00;
         min = 00;
 
@@ -180,6 +209,38 @@ public class AddEditNoteActivity extends AppCompatActivity {
         }).attachToRecyclerView(recyclerView);
     }
 
+    private void setupPriorityClickListner() {
+        textViewPrirityHigh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                notePriority = 1;
+                textViewPrirityHigh.setBackground(getResources().getDrawable(R.drawable.button_bg_orange));
+                textViewPrirityMedium.setBackground(getResources().getDrawable(R.drawable.button_bg_gray));
+                textViewPrirityLow.setBackground(getResources().getDrawable(R.drawable.button_bg_gray));
+            }
+        });
+
+        textViewPrirityMedium.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                notePriority = 2;
+                textViewPrirityHigh.setBackground(getResources().getDrawable(R.drawable.button_bg_gray));
+                textViewPrirityMedium.setBackground(getResources().getDrawable(R.drawable.button_bg_yellow));
+                textViewPrirityLow.setBackground(getResources().getDrawable(R.drawable.button_bg_gray));
+            }
+        });
+
+        textViewPrirityLow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                notePriority = 3;
+                textViewPrirityHigh.setBackground(getResources().getDrawable(R.drawable.button_bg_gray));
+                textViewPrirityMedium.setBackground(getResources().getDrawable(R.drawable.button_bg_gray));
+                textViewPrirityLow.setBackground(getResources().getDrawable(R.drawable.button_bg_green));
+            }
+        });
+    }
+
     DatePickerDialog.OnDateSetListener date = new DatePickerDialog.OnDateSetListener() {
 
         @Override
@@ -202,7 +263,7 @@ public class AddEditNoteActivity extends AppCompatActivity {
     private void addtoTempDB() {
         String title = editTextTitle.getText().toString();
         String desc = editTextDesc.getText().toString();
-        int priority = numberPickerPriority.getValue();
+        int priority = notePriority;
         int hour = hr;
         int minute = min;
 

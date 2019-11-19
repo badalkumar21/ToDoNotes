@@ -1,38 +1,43 @@
 package com.example.mynotes.Activity;
 
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.mynotes.Adapter.NoteAdapter;
 import com.example.mynotes.Adapter.NoteAdapterNew;
-import com.example.mynotes.DAO.NoteDao;
 import com.example.mynotes.Entity.Note;
+import com.example.mynotes.Helper.SwipeHelper;
 import com.example.mynotes.Model.NoteModel;
 import com.example.mynotes.R;
 import com.example.mynotes.ViewModel.NoteViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 
 import static com.example.mynotes.Activity.AddEditNoteActivity.EXTRA_DESC;
@@ -40,11 +45,12 @@ import static com.example.mynotes.Activity.AddEditNoteActivity.EXTRA_ID;
 import static com.example.mynotes.Activity.AddEditNoteActivity.EXTRA_PRIORITY;
 import static com.example.mynotes.Activity.AddEditNoteActivity.EXTRA_TITLE;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
 
     public static final int ADD_NOTE_REQUEST = 1;
     public static final int EDIT_NOTE_REQUEST = 2;
 
+    Context context;
     public NoteViewModel noteViewModel;
     FloatingActionButton actionButton;
     NoteAdapterNew adapter;
@@ -59,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        context = this;
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         actionButton = findViewById(R.id.button_add_note);
         recyclerView = findViewById(R.id.recycler_view);
@@ -87,6 +94,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+
         noteViewModel = ViewModelProviders.of(this).get(NoteViewModel.class);
         noteViewModel.getAllNotes().observe(this, new Observer<List<Note>>() {
             @Override
@@ -107,23 +116,23 @@ public class MainActivity extends AppCompatActivity {
         actionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                Intent intent = new Intent(MainActivity.this, AddEditNoteActivity.class);
-//                startActivityForResult(intent, ADD_NOTE_REQUEST);
-                showCustomDialog();
+                Intent intent = new Intent(MainActivity.this, AddEditNoteActivity.class);
+                startActivityForResult(intent, ADD_NOTE_REQUEST);
             }
         });
-        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,
-                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
-            @Override
-            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-                return false;
-            }
 
-            @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                noteViewModel.delete(adapterDetails.getNoteAt(viewHolder.getAdapterPosition()));
-            }
-        }).attachToRecyclerView(recyclerViewDetails);
+//        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,
+//                ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+//            @Override
+//            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+//                return false;
+//            }
+//
+//            @Override
+//            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+//                noteViewModel.delete(adapterDetails.getNoteAt(viewHolder.getAdapterPosition()));
+//            }
+//        }).attachToRecyclerView(recyclerViewDetails);
 
         adapterDetails.setOnItemClickListner(new NoteAdapter.OnItemClickListner() {
             @Override
@@ -137,6 +146,69 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+        SwipeHelper swipeHelper = new SwipeHelper(this, recyclerViewDetails) {
+
+            @Override
+            public void instantiateUnderlayButton(RecyclerView.ViewHolder viewHolder, List<UnderlayButton> underlayButtons) {
+                underlayButtons.add(new SwipeHelper.UnderlayButton(
+                        "Done",
+                        0,
+                        Color.parseColor("#4CAF50"),
+                        new SwipeHelper.UnderlayButtonClickListener() {
+                            @Override
+                            public void onClick(int pos) {
+                                Toast.makeText(MainActivity.this, "Done", Toast.LENGTH_SHORT).show();
+                                adapterDetails.notifyDataSetChanged();
+                            }
+                        }
+                ));
+
+                underlayButtons.add(new SwipeHelper.UnderlayButton(
+                        "Edit",
+                        0,
+                        Color.parseColor("#C7C7CB"),
+                        new SwipeHelper.UnderlayButtonClickListener() {
+                            @Override
+                            public void onClick(int pos) {
+                                Note note = adapterDetails.getNoteAt(viewHolder.getAdapterPosition());
+                                Intent intent = new Intent(MainActivity.this, AddEditNoteActivity.class);
+                                intent.putExtra(EXTRA_ID, note.getId());
+                                intent.putExtra(EXTRA_TITLE, note.getTitle());
+                                intent.putExtra(EXTRA_DESC, note.getDescription());
+                                intent.putExtra(EXTRA_PRIORITY, note.getPriority());
+                                startActivityForResult(intent, EDIT_NOTE_REQUEST);
+                                adapterDetails.notifyDataSetChanged();
+                            }
+                        }
+                ));
+                underlayButtons.add(new SwipeHelper.UnderlayButton(
+                        "Delete",
+                        0,
+                        Color.parseColor("#FF3C30"),
+                        new SwipeHelper.UnderlayButtonClickListener() {
+                            @Override
+                            public void onClick(int pos) {
+                                noteViewModel.delete(adapterDetails.getNoteAt(viewHolder.getAdapterPosition()));
+                                adapterDetails.notifyDataSetChanged();
+                            }
+                        }
+                ));
+                underlayButtons.add(new SwipeHelper.UnderlayButton(
+                        "View",
+                        0,
+                        Color.parseColor("#03A9F4"),
+                        new SwipeHelper.UnderlayButtonClickListener() {
+                            @Override
+                            public void onClick(int pos) {
+                                Note note = adapterDetails.getNoteAt(viewHolder.getAdapterPosition());
+                                showCustomDialog(3, note);
+                                adapterDetails.notifyDataSetChanged();
+                            }
+                        }
+                ));
+            }
+        };
     }
 
     private int getCurrentItem() {
@@ -177,6 +249,22 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, " ", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
+
+        if (id == R.id.nav_menu1) {
+            // Handle the camera action
+        } else if (id == R.id.nav_menu2) {
+
+        } else if (id == R.id.nav_menu3) {
+
+        }
+
+        return true;
     }
 
     private class ReadSQLiteAsynTask extends AsyncTask<List<Note>, Void, Void> {
@@ -239,12 +327,31 @@ public class MainActivity extends AppCompatActivity {
         }, 0);
     }
 
-    private void showCustomDialog() {
+    private void showCustomDialog(int type, Note note) {
         //before inflating the custom alert dialog layout, we will get the current activity viewgroup
         ViewGroup viewGroup = findViewById(android.R.id.content);
 
         //then we will inflate the custom alert dialog xml that we created
-        View dialogView = LayoutInflater.from(this).inflate(R.layout.my_dialog, viewGroup, false);
+        View dialogView;
+
+        switch (type) {
+
+            case 3:
+                dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_view, viewGroup, false);
+                TextView textViewTitle = dialogView.findViewById(R.id.title);
+                TextView textViewDesc = dialogView.findViewById(R.id.desc);
+                TextView textViewDate = dialogView.findViewById(R.id.date);
+                TextView textViewPriority = dialogView.findViewById(R.id.priority);
+                textViewTitle.setText(note.getTitle());
+                textViewDesc.setText(note.getDescription());
+                textViewDate.setText(note.getDate());
+                setDialogPriority(textViewPriority, note.getPriority());
+                break;
+
+            default:
+                dialogView = LayoutInflater.from(this).inflate(R.layout.my_dialog, viewGroup, false);
+                break;
+        }
 
 
         //Now we need an AlertDialog.Builder object
@@ -258,5 +365,23 @@ public class MainActivity extends AppCompatActivity {
         alertDialog.show();
     }
 
+    private void setDialogPriority(TextView textViewPriority, int priority) {
+        switch (priority) {
+
+
+            case 1:
+                textViewPriority.setText("Priority : High");
+                break;
+
+            case 2:
+                textViewPriority.setText("Priority : Medium");
+                break;
+
+            case 3:
+                textViewPriority.setText("Priority : Low");
+                break;
+
+        }
+    }
 }
 

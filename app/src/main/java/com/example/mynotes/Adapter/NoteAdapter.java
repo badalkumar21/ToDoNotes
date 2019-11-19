@@ -61,7 +61,7 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
                 break;
 
             case 2:
-                holder.linearLayoutContainer.setBackground(context.getResources().getDrawable(R.color.colorBlue));
+                holder.linearLayoutContainer.setBackground(context.getResources().getDrawable(R.color.colorYellow));
                 break;
 
             case 3:
@@ -82,6 +82,10 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.NoteViewHolder
         this.notes = notes;
         notifyDataSetChanged();
         Log.d("adapter_", "setNotes: " + notes.size());
+    }
+
+    public void setNotifyDataChanged() {
+        notifyDataSetChanged();
     }
 
     public Note getNoteAt(int position) {
